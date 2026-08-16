@@ -3,7 +3,12 @@
 import { Command } from "commander";
 import fs from "fs";
 import path from "path";
-import { prettierIgnoreContent, prettierrcContent, settingsContent } from "./constants";
+import {
+    nextjsSettingsContent,
+    prettierIgnoreContent,
+    prettierrcContent,
+    settingsContent,
+} from "./constants";
 
 const program = new Command();
 
@@ -13,8 +18,10 @@ program
     .command("init")
     .description("Initialize VSCode config and prettier in the workspace")
     .option("-f, --force", "Force overwrite existing files")
+    .option("-n, --nextjs", "Include Next.js custom editor labels in VS Code settings")
     .action((options) => {
         const isForce = options.force;
+        const isNextjs = options.nextjs;
         const targetDir = process.cwd();
         const vscodeDir = path.join(targetDir, ".vscode");
         const settingsPath = path.join(vscodeDir, "settings.json");
@@ -29,9 +36,15 @@ program
             console.log("✅ Created .vscode directory");
         }
 
+        // Prepare settings content
+        const finalSettings = {
+            ...settingsContent,
+            ...(isNextjs ? nextjsSettingsContent : {}),
+        };
+
         // Write settings.json
         if (!fs.existsSync(settingsPath) || isForce) {
-            fs.writeFileSync(settingsPath, JSON.stringify(settingsContent, null, 4));
+            fs.writeFileSync(settingsPath, JSON.stringify(finalSettings, null, 4));
             console.log(
                 `✅ ${isForce && fs.existsSync(settingsPath) ? "Overwrote" : "Created"} .vscode/settings.json`,
             );
