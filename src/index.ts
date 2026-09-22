@@ -4,6 +4,8 @@ import { Command } from "commander";
 import fs from "fs";
 import path from "path";
 import {
+    claudeMdContent,
+    designMdContent,
     nextjsSettingsContent,
     prettierIgnoreContent,
     prettierrcContent,
@@ -77,6 +79,61 @@ program
         }
 
         console.log("📦 Please install prettier as devDependency...");
+        console.log("🎉 Done!");
+    });
+
+const skill = program.command("skill").description("Manage and add skill/rule files");
+
+skill
+    .command("add [name]")
+    .description("Add skill/rule files to workspace (claude, design, all)")
+    .option("-f, --force", "Force overwrite existing files")
+    .action((name, options) => {
+        const isForce = options.force;
+        const targetDir = process.cwd();
+
+        const skills: Record<string, { filename: string; content: string }> = {
+            claude: { filename: "CLAUDE.md", content: claudeMdContent },
+            design: { filename: "DESIGN.md", content: designMdContent },
+        };
+
+        if (!name) {
+            console.log(
+                `❌ Please specify a skill to add: ${Object.keys(skills).join(", ")}, all\nExample: sudhucodes skill add claude`,
+            );
+            return;
+        }
+
+        const skillKey = name.toLowerCase();
+
+        const toAdd =
+            skillKey === "all"
+                ? Object.values(skills)
+                : skills[skillKey]
+                  ? [skills[skillKey]]
+                  : null;
+
+        if (!toAdd) {
+            console.log(
+                `❌ Unknown skill "${name}". Available skills: ${Object.keys(skills).join(", ")}, all`,
+            );
+            return;
+        }
+
+        for (const item of toAdd) {
+            const filePath = path.join(targetDir, item.filename);
+            if (!fs.existsSync(filePath) || isForce) {
+                fs.writeFileSync(filePath, item.content);
+                console.log(
+                    `✅ ${isForce && fs.existsSync(filePath) ? "Overwrote" : "Created"} ${item.filename}`,
+                );
+            } else {
+                console.log(
+                    `⚠️ Skipped ${item.filename} (already exists). Use --force or -f to overwrite.`,
+                );
+            }
+        }
+
         console.log("🎉 Done!");
     });
 
